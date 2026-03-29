@@ -1,5 +1,5 @@
 import 'fastify';
-import type { Organization } from '../db/queries/orgs';
+import type { Organization } from '../resources/auth/auth.model';
 
 declare module 'fastify' {
   interface FastifyRequest {

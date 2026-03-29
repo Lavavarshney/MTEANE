@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { findActiveKeyByHash, updateLastUsed } from '../db/queries/apiKeys';
+import { findActiveKeyByHash, updateLastUsed } from '../resources/auth/auth.model';
 import { hashApiKey } from '../utils/hash';
 
 export const authPreHandler = async (request: FastifyRequest, reply: FastifyReply) => {

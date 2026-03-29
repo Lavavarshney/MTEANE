@@ -4,10 +4,9 @@ import { z } from 'zod';
 const envSchema = z.object({
   PORT: z.string()
     .optional()
-    .transform(v => {
-      const str = v ?? '3000';
-      const num = parseInt(str, 10);
-      if (isNaN(num) || num < 1 || num > 65535) {
+    .transform((str = '3000') => {
+      const num = Number.parseInt(str, 10);
+      if (Number.isNaN(num) || num < 1 || num > 65535) {
         throw new Error('PORT must be between 1 and 65535');
       }
       return num;
@@ -19,10 +18,9 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).optional().default('info'),
   WORKER_CONCURRENCY: z.string()
     .optional()
-    .transform(v => {
-      const str = v ?? '5';
-      const num = parseInt(str, 10);
-      if (isNaN(num) || num < 1 || num > 100) {
+    .transform((str = '5') => {
+      const num = Number.parseInt(str, 10);
+      if (Number.isNaN(num) || num < 1 || num > 100) {
         throw new Error('WORKER_CONCURRENCY must be between 1 and 100');
       }
       return num;
@@ -41,4 +39,4 @@ if (!envResult.success) {
   );
 }
 
-export const config = envResult.data as z.infer<typeof envSchema>;
+export const config = envResult.data;

@@ -1,5 +1,6 @@
 import { Pool, QueryResult, QueryResultRow } from 'pg';
 import { config } from '../config';
+import { logger } from '../utils/logger';
 
 const isNeon = config.DATABASE_URL.includes('neon.tech');
 
@@ -28,7 +29,7 @@ export async function query<T extends QueryResultRow = any>(
   params: any[] = [],
 ): Promise<QueryResult<T>> {
   if (config.NODE_ENV === 'development') {
-    console.log('[SQL]', text, params.length > 0 ? params : '');
+    logger.debug({ sql: text, params: params.length > 0 ? params : undefined }, '[SQL]');
   }
 
   try {
@@ -36,13 +37,13 @@ export async function query<T extends QueryResultRow = any>(
   } catch (error) {
     if (isTransientConnectionError(error)) {
       if (config.NODE_ENV === 'development') {
-        console.warn('[SQL Retry] Retrying transient connection failure...');
+        logger.warn('[SQL Retry] Retrying transient connection failure...');
       }
       return await db.query<T>(text, params);
     }
 
     if (config.NODE_ENV === 'development') {
-      console.error('[SQL Error]', text, params, error);
+      logger.error({ sql: text, params, error }, '[SQL Error]');
     }
     throw error;
   }

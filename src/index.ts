@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { buildApp } from './api';
 import { config } from './shared/config';
+import { logger } from './utils/logger';
 
 const start = async () => {
   const app = await buildApp();
@@ -13,6 +14,6 @@ const start = async () => {
 };
 
 start().catch(err => {
-  console.error('Failed to start:', err);
+  logger.error({ err }, 'Failed to start');
   process.exit(1);
 });

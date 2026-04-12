@@ -1,10 +1,11 @@
 import 'dotenv/config';
-import { Worker, UnrecoverableError } from 'bullmq';
+import { Worker } from 'bullmq';
 import { getBullMQConnection } from '../queue/client';
 import { config } from '../shared/config';
 import { fetchEventWithOrg } from '../resources/events/events.model';
-import { getActiveRules } from '../resources/rules/rules.model';
+import { getActiveRules, createActionLog, type Rule } from '../resources/rules/rules.model';
 import { getCachedRules, setCachedRules } from '../cache/rules';
+import { evaluate } from '../engine/evaluator';
 import { logger } from '../utils/logger';
 
 const worker = new Worker(
@@ -34,7 +35,8 @@ const worker = new Worker(
 				{ event_id: eventId },
 				'Event not found in DB — discarding job (no retry)'
 			);
-			throw new UnrecoverableError('Event not found in DB');
+			await job.discard();
+			throw new Error('Event not found in DB');
 		}
 
 		// Day 7: rules with Redis cache (60s TTL)
@@ -51,7 +53,58 @@ const worker = new Worker(
 			'Rules fetched'
 		);
 
-		logger.info({ event_id: eventId, status: 'completed' }, 'Event processed');
+		// Day 9-10: evaluate rules against event payload
+		const matchedRules: Rule[] = [];
+
+		for (const rule of rules) {
+			try {
+				const isMatched = evaluate(rule.condition as any, event.payload);
+				if (isMatched) {
+					matchedRules.push(rule);
+				}
+			} catch (err) {
+				logger.error(
+					{
+						event_id: eventId,
+						rule_id: rule.id,
+						error: err instanceof Error ? err.message : String(err),
+					},
+					'Error evaluating rule condition — skipping rule'
+				);
+				// Continue to next rule instead of failing entire job
+			}
+		}
+
+		logger.info(
+			{
+				event_id: eventId,
+				matched: matchedRules.length,
+				total: rules.length,
+			},
+			'Rule matching complete'
+		);
+
+		// Day 10: insert action_logs for matched rules with pending status
+		for (const rule of matchedRules) {
+			try {
+				await createActionLog(eventId, rule.id, orgId, 'pending');
+			} catch (err) {
+				logger.error(
+					{
+						event_id: eventId,
+						rule_id: rule.id,
+						error: err instanceof Error ? err.message : String(err),
+					},
+					'Failed to create action log'
+				);
+				// Log the error but don't fail the job — action log is best-effort
+			}
+		}
+
+		logger.info(
+			{ event_id: eventId, status: 'completed', matched_rules: matchedRules.length },
+			'Event processed'
+		);
 	},
 	{
 		connection: getBullMQConnection(),

@@ -33,11 +33,11 @@ async function seed() {
     const apiKey = keyResult.rows[0];
     logger.info({ key_id: apiKey.id, label: apiKey.label }, 'API key ready');
 
-    // Must stay as console.log — plaintext key must be visible to the developer reading terminal output
-    console.log('\n⚠️  PLAINTEXT API KEY (SAVE THIS NOW — IT WILL NEVER BE SHOWN AGAIN):');
-    console.log(`\n   ${plainKey}\n`);
-    console.log('Use this key in the x-api-key header:\n');
-    console.log(`   curl -H "x-api-key: ${plainKey}" http://localhost:3000/health\n`);
+    // Print plaintext key directly to stdout so it's easy to copy from terminal.
+    process.stdout.write('\nPLAINTEXT API KEY (SAVE THIS NOW - IT WILL NEVER BE SHOWN AGAIN):\n');
+    process.stdout.write(`\n   ${plainKey}\n\n`);
+    process.stdout.write('Use this key in the x-api-key header:\n\n');
+    process.stdout.write(`   curl -H "x-api-key: ${plainKey}" http://localhost:3000/health\n\n`);
 
     logger.info('Seeding complete');
     process.exit(0);

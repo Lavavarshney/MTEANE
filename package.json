@@ -7,11 +7,13 @@
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
+    "dev:worker": "tsx watch src/workers/index.ts",
     "worker": "tsx watch src/workers/index.ts",
     "worker:start": "node dist/workers/index.js",
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/seed.ts",
     "smoke": "tsx src/smoke.ts",
+    "test": "node --test src/**/*.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },

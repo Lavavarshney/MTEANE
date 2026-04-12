@@ -2,6 +2,7 @@ import 'dotenv/config';
 import fs from 'node:fs';
 import path from 'node:path';
 import { db } from '../shared/db';
+import { logger } from '../utils/logger';
 
 const migrationsDir = path.join(__dirname, 'migrations');
 
@@ -12,7 +13,7 @@ const migrationsDir = path.join(__dirname, 'migrations');
  */
 async function migrate() {
 	try {
-		console.log('\n🔄 Starting migrations...\n');
+		logger.info('Starting migrations...');
 
 		// Read all SQL files from migrations directory
 		const files = fs
@@ -21,13 +22,11 @@ async function migrate() {
 			.sort((a, b) => a.localeCompare(b));
 
 		if (files.length === 0) {
-			console.log('❌ No migration files found in', migrationsDir);
+			logger.error({ migrations_dir: migrationsDir }, 'No migration files found');
 			process.exit(1);
 		}
 
-		console.log(`Found ${files.length} migration(s):`);
-		files.forEach(f => console.log(`  • ${f}`));
-		console.log();
+		logger.info({ count: files.length, files }, 'Migrations discovered');
 
 		// Execute each migration SQL file
 		for (const file of files) {
@@ -35,20 +34,19 @@ async function migrate() {
 			const sql = fs.readFileSync(filePath, 'utf-8');
 
 			try {
-				console.log(`▶️  Running ${file}...`);
+				logger.info({ file }, 'Running migration');
 				await db.query(sql);
-				console.log(`✅ ${file} completed\n`);
+				logger.info({ file }, 'Migration completed');
 			} catch (error) {
-				console.error(`❌ Failed to run ${file}`);
-				console.error(error);
+				logger.error({ file, error }, 'Failed to run migration');
 				process.exit(1);
 			}
 		}
 
-		console.log('✨ All migrations completed successfully!\n');
+		logger.info('All migrations completed successfully');
 		process.exit(0);
 	} catch (error) {
-		console.error('❌ Migration error:', error);
+		logger.error({ error }, 'Migration error');
 		process.exit(1);
 	} finally {
 		await db.end();

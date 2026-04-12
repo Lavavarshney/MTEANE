@@ -1,5 +1,6 @@
 import type { EventWithOrg } from '../../resources/events/events.model';
 import type { Executor, ExecutionResult } from './types';
+import { isPrivateUrl } from '../../utils/ssrf';
 
 interface SlackConfig {
   webhook_url: string;
@@ -19,6 +20,10 @@ export class SlackExecutor implements Executor {
   async execute(rawConfig: unknown, event: EventWithOrg): Promise<ExecutionResult> {
     if (!isSlackConfig(rawConfig)) {
       return { success: false, error: 'Invalid slack config: missing webhook_url' };
+    }
+
+    if (isPrivateUrl(rawConfig.webhook_url)) {
+      return { success: false, error: 'SSRF protection: Slack webhook URL must be a public HTTP/HTTPS address' };
     }
 
     const text = [

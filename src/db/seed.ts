@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { randomBytes } from 'node:crypto';
 import { db, query } from '../shared/db';
 import { hashApiKey } from '../utils/hash';
+import { config } from '../config';
 import { logger } from '../utils/logger';
 
 async function seed() {
@@ -20,7 +21,7 @@ async function seed() {
     logger.info({ org_id: org.id, slug: org.slug }, 'Organization ready');
 
     const plainKey = randomBytes(32).toString('hex');
-    const hashedKey = hashApiKey(plainKey);
+    const hashedKey = hashApiKey(plainKey, config.API_KEY_SECRET);
 
     const keyResult = await query(
       `INSERT INTO api_keys (org_id, key_hash, label, is_active)

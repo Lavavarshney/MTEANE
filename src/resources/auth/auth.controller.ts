@@ -3,10 +3,11 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { createOrg, createApiKey } from './auth.model';
 import { hashApiKey } from '../../utils/hash';
+import { config } from '../../config';
 
 const registerBodySchema = z.object({
-  name: z.string().min(1),
-  slug: z.string().min(1),
+  name: z.string().min(1).max(120),
+  slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/, 'slug may only contain lowercase letters, numbers, and hyphens'),
 });
 
 export const register = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -23,7 +24,7 @@ export const register = async (request: FastifyRequest, reply: FastifyReply) => 
   try {
     const org = await createOrg(name, slug);
     const apiKey = randomBytes(32).toString('hex');
-    await createApiKey(org.id, hashApiKey(apiKey), 'primary');
+    await createApiKey(org.id, hashApiKey(apiKey, config.API_KEY_SECRET), 'primary');
 
     return reply.status(201).send({
       org_id: org.id,

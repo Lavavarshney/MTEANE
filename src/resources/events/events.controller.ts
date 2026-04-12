@@ -5,9 +5,9 @@ import { enqueueEvent } from '../../queue/eventsQueue';
 import { logger } from '../../utils/logger';
 
 const receiveEventBodySchema = z.object({
-  event_type: z.string().regex(/^[a-z]+\.[a-z_]+$/, 'event_type must match pattern: <noun>.<verb>'),
-  payload: z.record(z.string(), z.unknown()),
-  idempotency_key: z.string().optional(),
+  event_type: z.string().max(100).regex(/^[a-z]+\.[a-z_]+$/, 'event_type must match pattern: <noun>.<verb>'),
+  payload: z.record(z.string().max(256), z.unknown()),
+  idempotency_key: z.string().max(256).optional(),
 });
 
 export const receiveEvent = async (request: FastifyRequest, reply: FastifyReply) => {

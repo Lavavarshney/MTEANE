@@ -51,7 +51,7 @@ export const retryDlqJobHandler = async (request: FastifyRequest, reply: Fastify
   };
 
   // Mark action_logs as 'retrying' before re-enqueuing
-  await updateActionLogsByEventId(eventId, 'retrying').catch(err =>
+  await updateActionLogsByEventId(eventId, 'retrying', orgId).catch(err =>
     logger.error(
       { event_id: eventId, error: (err as Error).message },
       'Failed to mark action logs as retrying',

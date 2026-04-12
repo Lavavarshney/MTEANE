@@ -220,7 +220,7 @@ worker.on('failed', async (job, err) => {
 			logger.error({ event_id: eventId, error: (dlqErr as Error).message }, 'Failed to add job to DLQ'),
 		);
 
-		await updateActionLogsByEventId(eventId, 'dead').catch(dbErr =>
+		await updateActionLogsByEventId(eventId, 'dead', orgId).catch(dbErr =>
 			logger.error({ event_id: eventId, error: (dbErr as Error).message }, 'Failed to mark action logs as dead'),
 		);
 

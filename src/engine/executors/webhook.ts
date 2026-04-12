@@ -1,5 +1,6 @@
 import type { EventWithOrg } from '../../resources/events/events.model';
 import type { Executor, ExecutionResult } from './types';
+import { isPrivateUrl } from '../../utils/ssrf';
 
 interface WebhookConfig {
   url: string;
@@ -20,6 +21,10 @@ export class WebhookExecutor implements Executor {
   async execute(config: unknown, event: EventWithOrg): Promise<ExecutionResult> {
     if (!isWebhookConfig(config)) {
       return { success: false, error: 'Invalid webhook config: missing url' };
+    }
+
+    if (isPrivateUrl(config.url)) {
+      return { success: false, error: 'SSRF protection: webhook URL must be a public HTTP/HTTPS address' };
     }
 
     let response: Response;

@@ -50,17 +50,20 @@ export async function findOrCreateActionLog(
 
 /**
  * Bulk-update all action_logs for a given event to a new status.
+ * Scoped by org_id for defence-in-depth — prevents one org's event_id
+ * from accidentally (or deliberately) touching another org's rows.
  * Used by the worker's failed handler (mark 'dead') and DLQ retry (mark 'retrying').
  */
 export async function updateActionLogsByEventId(
   eventId: string,
   status: ActionLog['status'],
+  orgId: string,
 ): Promise<void> {
   await query(
     `UPDATE action_logs
      SET status = $2, updated_at = CURRENT_TIMESTAMP
-     WHERE event_id = $1`,
-    [eventId, status],
+     WHERE event_id = $1 AND org_id = $3`,
+    [eventId, status, orgId],
   );
 }
 

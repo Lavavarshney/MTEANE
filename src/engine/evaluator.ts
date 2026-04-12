@@ -91,6 +91,21 @@ export function evaluate(condition: Condition, payload: Record<string, unknown>)
       if (typeof fieldValue !== 'string' || typeof value !== 'string') {
         return false;
       }
+
+      // Guard against ReDoS: reject patterns exceeding a safe length.
+      const MAX_REGEX_LENGTH = 200;
+      if (value.length > MAX_REGEX_LENGTH) {
+        throw new Error(`Regex pattern too long (max ${MAX_REGEX_LENGTH} characters)`);
+      }
+
+      // Guard against catastrophic backtracking caused by nested quantifiers,
+      // e.g. (a+)+ or (a*)* which produce exponential backtracking on worker threads.
+      // The pattern matches: a group containing a repeating element, itself repeated.
+      const NESTED_QUANTIFIER = /\([^)]*[+*{][^)]*\)\s*[+*{]/;
+      if (NESTED_QUANTIFIER.test(value)) {
+        throw new Error('Dangerous regex pattern detected (potential ReDoS via nested quantifiers)');
+      }
+
       try {
         const regex = new RegExp(value);
         return regex.test(fieldValue);

@@ -1,6 +1,7 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { findActiveKeyByHash, updateLastUsed } from '../resources/auth/auth.model';
 import { hashApiKey } from '../utils/hash';
+import { config } from '../config';
 
 export const authPreHandler = async (request: FastifyRequest, reply: FastifyReply) => {
   const apiKeyHeader = request.headers['x-api-key'];
@@ -9,7 +10,7 @@ export const authPreHandler = async (request: FastifyRequest, reply: FastifyRepl
     return reply.status(401).send({ message: 'Missing x-api-key header' });
   }
 
-  const keyHash = hashApiKey(apiKeyHeader);
+  const keyHash = hashApiKey(apiKeyHeader, config.API_KEY_SECRET);
   const keyRecord = await findActiveKeyByHash(keyHash);
 
   if (!keyRecord) {

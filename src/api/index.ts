@@ -19,6 +19,8 @@ export const buildApp = async () => {
           ? { target: 'pino-pretty', options: { colorize: true } }
           : undefined,
     },
+    // Reject request bodies larger than 512 KB to prevent large-body DoS.
+    bodyLimit: 524_288,
   });
 
   await app.register(fastifyPrintRoutes);
@@ -28,7 +30,7 @@ export const buildApp = async () => {
     openapi: {
       openapi: '3.0.3',
       info: {
-        title: 'Triggrr API',
+        title: 'Trigger API',
         description:
           'Event-driven rule engine: ingest events, evaluate rules, and fire webhook/email/Slack actions.',
         version: '1.0.0',

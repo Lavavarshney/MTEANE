@@ -1,0 +1,346 @@
+{
+  "info": {
+    "name": "Triggrr API",
+    "description": "Multi-Tenant Event Automation & Notification Engine. Import alongside triggrr.postman_environment.json and set your base_url.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "triggrr-collection-v1"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key",   "value": "x-api-key",      "type": "string" },
+      { "key": "value", "value": "{{api_key}}",     "type": "string" },
+      { "key": "in",    "value": "header",           "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Body has status ok', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.status).to.eql('ok');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Organisation",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/auth/register", "host": ["{{base_url}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp\",\n  \"slug\": \"acme-corp\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Returns api_key and org_id', () => {",
+                  "  pm.expect(json).to.have.property('api_key');",
+                  "  pm.expect(json).to.have.property('org_id');",
+                  "});",
+                  "pm.environment.set('api_key', json.api_key);",
+                  "pm.environment.set('org_id', json.org_id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Ingest Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/events", "host": ["{{base_url}}"], "path": ["events"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"user.signed_up\",\n  \"payload\": {\n    \"user\": {\n      \"email\": \"alice@example.com\",\n      \"plan\": \"pro\"\n    }\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 202', () => pm.response.to.have.status(202));",
+                  "const json = pm.response.json();",
+                  "pm.test('Returns event_id', () => pm.expect(json).to.have.property('event_id'));",
+                  "pm.environment.set('event_id', json.event_id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Rules",
+      "item": [
+        {
+          "name": "Create Rule (webhook)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/rules", "host": ["{{base_url}}"], "path": ["rules"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Notify on Pro Signup\",\n  \"event_type\": \"user.signed_up\",\n  \"condition\": {\n    \"field\": \"user.plan\",\n    \"operator\": \"eq\",\n    \"value\": \"pro\"\n  },\n  \"action_type\": \"webhook\",\n  \"action_config\": {\n    \"url\": \"https://webhook.site/your-token\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Returns rule id', () => pm.expect(json).to.have.property('id'));",
+                  "pm.environment.set('rule_id', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Rules",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/rules", "host": ["{{base_url}}"], "path": ["rules"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns rules array', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.rules).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Patch Rule",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/rules/{{rule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["rules", "{{rule_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Rule Name\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Rule Logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/rules/{{rule_id}}/logs",
+              "host": ["{{base_url}}"],
+              "path": ["rules", "{{rule_id}}", "logs"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns logs array', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.logs).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Rule",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/rules/{{rule_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["rules", "{{rule_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Rule deactivated', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.is_active).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "List Action Logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/logs?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["logs"],
+              "query": [
+                { "key": "limit",   "value": "20" },
+                { "key": "status",  "value": "success", "disabled": true },
+                { "key": "rule_id", "value": "{{rule_id}}", "disabled": true },
+                { "key": "cursor",  "value": "", "disabled": true }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns logs array', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.logs).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Org Stats",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/stats", "host": ["{{base_url}}"], "path": ["stats"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns stats', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('total_events');",
+                  "  pm.expect(json).to.have.property('success_rate');",
+                  "  pm.expect(json.top_rules).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DLQ",
+      "item": [
+        {
+          "name": "List DLQ Jobs",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/dlq", "host": ["{{base_url}}"], "path": ["dlq"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns jobs array', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.jobs).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Retry DLQ Job",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/dlq/:job_id/retry",
+              "host": ["{{base_url}}"],
+              "path": ["dlq", ":job_id", "retry"],
+              "variable": [{ "key": "job_id", "value": "paste-dlq-job-id-here" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 or 404', () => {",
+                  "  pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

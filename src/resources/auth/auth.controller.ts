@@ -1,13 +1,27 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { z } from 'zod';
 import { createOrg, createApiKey } from './auth.model';
 import { hashApiKey } from '../../utils/hash';
 
+const registerBodySchema = z.object({
+  name: z.string().min(1),
+  slug: z.string().min(1),
+});
+
 export const register = async (request: FastifyRequest, reply: FastifyReply) => {
-  const body = request.body as { name: string; slug: string };
+  const parsed = registerBodySchema.safeParse(request.body);
+  if (!parsed.success) {
+    return reply.status(400).send({
+      message: 'Validation failed',
+      errors: parsed.error.issues.map(i => ({ path: i.path.join('.'), message: i.message })),
+    });
+  }
+
+  const { name, slug } = parsed.data;
 
   try {
-    const org = await createOrg(body.name, body.slug);
+    const org = await createOrg(name, slug);
     const apiKey = randomBytes(32).toString('hex');
     await createApiKey(org.id, hashApiKey(apiKey), 'primary');
 

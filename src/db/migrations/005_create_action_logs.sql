@@ -7,12 +7,13 @@ CREATE TABLE IF NOT EXISTS action_logs (
   rule_id UUID NOT NULL REFERENCES rules(id) ON DELETE CASCADE,
   org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   status TEXT NOT NULL CHECK (status IN ('pending', 'success', 'failed', 'retrying', 'dead')),
-  attempt_count INT NOT NULL DEFAULT 1,
+  attempt_count INT NOT NULL DEFAULT 0,
   error_message TEXT,
   response_body TEXT,
   executed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (event_id, rule_id)
 );
 
 -- Index on org and event for quick lookup

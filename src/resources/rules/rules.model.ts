@@ -110,6 +110,41 @@ export async function updateRule(
   return result.rows[0] ?? null;
 }
 
+/** Rule enriched with the timestamp of its most recent action log execution. */
+export interface RuleWithLastTriggered extends Rule {
+  last_triggered_at: string | null;
+}
+
+/**
+ * Like listRulesByOrg but also includes last_triggered_at from action_logs.
+ * Used by GET /rules so callers can see which rules have recently fired.
+ */
+export async function listRulesWithLastTriggered(
+  orgId: string,
+): Promise<RuleWithLastTriggered[]> {
+  const result = await query<RuleWithLastTriggered>(
+    `SELECT
+       r.id, r.org_id, r.name, r.event_type, r.condition, r.action_type,
+       r.action_config, r.is_active, r.created_at, r.updated_at,
+       (SELECT MAX(al.executed_at)
+        FROM action_logs al
+        WHERE al.rule_id = r.id) AS last_triggered_at
+     FROM rules r
+     WHERE r.org_id = $1
+     ORDER BY r.created_at DESC`,
+    [orgId],
+  );
+  return result.rows;
+}
+
+export async function countActiveRulesByOrg(orgId: string): Promise<number> {
+  const result = await query<{ count: string }>(
+    `SELECT COUNT(*) AS count FROM rules WHERE org_id = $1 AND is_active = true`,
+    [orgId],
+  );
+  return Number(result.rows[0]?.count ?? 0);
+}
+
 export async function softDeleteRule(orgId: string, ruleId: string): Promise<Rule | null> {
   const result = await query<Rule>(
     `UPDATE rules
@@ -122,36 +157,3 @@ export async function softDeleteRule(orgId: string, ruleId: string): Promise<Rul
   return result.rows[0] ?? null;
 }
 
-export interface ActionLog {
-  id: string;
-  event_id: string;
-  rule_id: string;
-  org_id: string;
-  status: 'pending' | 'success' | 'failed' | 'retrying' | 'dead';
-  attempt_count: number;
-  error_message: string | null;
-  response_body: string | null;
-  executed_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export async function createActionLog(
-  eventId: string,
-  ruleId: string,
-  orgId: string,
-  status: ActionLog['status'],
-): Promise<ActionLog> {
-  const result = await query<ActionLog>(
-    `INSERT INTO action_logs (event_id, rule_id, org_id, status)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, event_id, rule_id, org_id, status, attempt_count, error_message, response_body, executed_at, created_at, updated_at`,
-    [eventId, ruleId, orgId, status],
-  );
-
-  if (!result.rows[0]) {
-    throw new Error('Failed to create action log');
-  }
-
-  return result.rows[0];
-}

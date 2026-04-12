@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Triggrr — Architecture Overview</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 48px 32px;
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      margin-top: 10px;
+      color: #94a3b8;
+      font-size: 1.05rem;
+    }
+
+    .section {
+      max-width: 1100px;
+      margin: 0 auto 72px auto;
+    }
+
+    .section h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #c4b5fd;
+      border-left: 3px solid #7c3aed;
+      padding-left: 14px;
+      margin-bottom: 28px;
+      letter-spacing: 0.3px;
+    }
+
+    .diagram-card {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      padding: 36px 28px;
+      overflow-x: auto;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    .mermaid svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .phases {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      max-width: 1100px;
+      margin: 0 auto 72px auto;
+    }
+
+    .phase-card {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 14px;
+      padding: 24px 20px;
+    }
+
+    .phase-card .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 99px;
+      margin-bottom: 12px;
+    }
+
+    .phase-card:nth-child(1) .badge { background: #1e3a5f; color: #60a5fa; }
+    .phase-card:nth-child(2) .badge { background: #1e3a2a; color: #4ade80; }
+    .phase-card:nth-child(3) .badge { background: #3a1e3a; color: #c084fc; }
+    .phase-card:nth-child(4) .badge { background: #3a2a1e; color: #fb923c; }
+    .phase-card:nth-child(5) .badge { background: #3a1e1e; color: #f87171; }
+    .phase-card:nth-child(6) .badge { background: #1e3535; color: #34d399; }
+
+    .phase-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 10px;
+    }
+
+    .phase-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .phase-card ul li {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      padding: 3px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .phase-card ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: #475569;
+    }
+
+    .rule-example {
+      max-width: 1100px;
+      margin: 0 auto 72px auto;
+    }
+
+    .rule-example h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #c4b5fd;
+      border-left: 3px solid #7c3aed;
+      padding-left: 14px;
+      margin-bottom: 28px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    th {
+      background: #2d3148;
+      color: #94a3b8;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 14px 20px;
+      text-align: left;
+    }
+
+    td {
+      padding: 14px 20px;
+      border-top: 1px solid #2d3148;
+      color: #e2e8f0;
+      font-size: 0.925rem;
+    }
+
+    td code {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: #a78bfa;
+    }
+
+    .api-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      max-width: 1100px;
+      margin: 0 auto 72px auto;
+    }
+
+    .api-group {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 14px;
+      padding: 22px 20px;
+    }
+
+    .api-group h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #2d3148;
+    }
+
+    .api-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 5px 0;
+    }
+
+    .method {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    .method.get  { background: #1e3a2a; color: #4ade80; }
+    .method.post { background: #1e3a5f; color: #60a5fa; }
+    .method.patch { background: #3a2a1e; color: #fb923c; }
+    .method.delete { background: #3a1e1e; color: #f87171; }
+
+    .api-path {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.825rem;
+      color: #c4b5fd;
+    }
+
+    .api-desc {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-left: auto;
+    }
+
+    footer {
+      text-align: center;
+      color: #334155;
+      font-size: 0.8rem;
+      margin-top: 32px;
+    }
+
+    @media print {
+      body { background: white; color: black; padding: 20px; }
+      .diagram-card, .phase-card, table, .api-group { border-color: #ccc; background: white; }
+      header h1 { -webkit-text-fill-color: #5b21b6; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Triggrr</h1>
+  <p>Multi-Tenant Event Automation &amp; Notification Engine — Architecture Overview</p>
+</header>
+
+<!-- BIG PICTURE -->
+<div class="section">
+  <h2>The Big Picture</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+flowchart TD
+    YourApp["🖥️ Your App\ne-commerce, SaaS, anything"]
+
+    subgraph Triggrr["⚡ Triggrr"]
+        direction TB
+
+        subgraph API["API Layer — the front door"]
+            Register["🔑 Register your company\ngets you an API key"]
+            EventIn["📥 Receive an event\ne.g. order.created"]
+            RulesCRUD["📋 Manage your rules\ncreate / edit / delete"]
+            Observe["🔭 Observe results\nGET /logs · GET /stats · /docs"]
+        end
+
+        subgraph Reliability["Reliability Guards"]
+            RateLimit["🚦 Rate Limiter\nper-tenant sliding window\nRedis Lua script"]
+            PlanLimit["📊 Plan Limits\nfree · pro · enterprise\nmax rules + req/min"]
+        end
+
+        subgraph Storage["Storage"]
+            PG[("🐘 PostgreSQL\npermanent store")]
+            Redis[("⚡ Redis\nfast cache + queue")]
+        end
+
+        subgraph Queue["Queue — the conveyor belt"]
+            Q["📦 BullMQ Job Queue\nevent lands here\nwaiting to be processed"]
+            DLQ["💀 Dead Letter Queue\nexhausted after 3 retries\nmanual retry via API"]
+        end
+
+        subgraph Worker["Worker — runs in background 24/7"]
+            Fetch["📂 Fetch full event\nfrom database"]
+            RuleCache["🔍 Check Redis cache\nfor matching rules\n60s fast lookup"]
+            Evaluate["⚖️ Evaluate each rule\nagainst event payload"]
+            Matched["✅ Collect matched rules\nlog them as pending"]
+        end
+
+        subgraph Executors["Action Executors — what actually happens"]
+            WH["🌐 Webhook\nHTTP call to your server"]
+            EM["📧 Email\nvia SMTP"]
+            SL["💬 Slack\nmessage to your channel"]
+        end
+
+        subgraph Logs["Audit Trail"]
+            AL[("📜 action_logs\nevery attempt recorded\nsuccess / failed / retrying / dead")]
+        end
+    end
+
+    YourApp -->|"sends event + API key"| EventIn
+    EventIn -->|"rate check"| RateLimit
+    RateLimit -->|"saves event"| PG
+    RateLimit -->|"drops job instantly"| Q
+    Register -->|"creates org + key"| PG
+    RulesCRUD -->|"plan limit check"| PlanLimit
+    PlanLimit -->|"saves rules"| PG
+    PlanLimit -->|"clears cache"| Redis
+    Observe -->|"reads logs + stats"| PG
+
+    Q -->|"worker picks up"| Fetch
+    Fetch -->|"loads event"| PG
+    RuleCache -->|"cache miss"| PG
+    RuleCache -->|"cache hit"| Redis
+    Fetch --> RuleCache --> Evaluate --> Matched
+
+    Matched --> WH
+    Matched --> EM
+    Matched --> SL
+
+    WH -->|"records result"| AL
+    EM -->|"records result"| AL
+    SL -->|"records result"| AL
+
+    AL --> PG
+
+    Q -->|"3 failures → exhausted"| DLQ
+    DLQ -->|"manual retry"| Q
+    </div>
+  </div>
+</div>
+
+<!-- FULL JOURNEY -->
+<div class="section">
+  <h2>The Full Journey — Step by Step</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+sequenceDiagram
+    actor You as Your App / Team
+    participant API as Triggrr API
+    participant RL as Rate Limiter
+    participant DB as Database
+    participant Queue as Job Queue
+    participant Worker as Background Worker
+    participant Action as Email / Slack / Webhook
+
+    Note over You,API: One-time setup
+    You->>API: Register company → get API key
+    You->>API: Create rule — if order.amount > 100 → Slack channel
+    API->>DB: Save rule, clear Redis cache
+
+    Note over You,Action: Every time an event happens
+    You->>API: Send event — order.created with amount 250
+    API->>RL: Check rate limit (Redis sliding window)
+    RL-->>API: Within limit — proceed
+    API->>DB: Store event permanently
+    API->>Queue: Drop a job (deduplicated by event ID)
+    API-->>You: 202 Accepted — no waiting
+
+    Queue->>Worker: Process this event
+    Worker->>DB: Load full event details
+    Worker->>DB: Load matching rules (cache or DB)
+    Worker->>Worker: Does amount 250 > 100? YES
+    Worker->>DB: Record pending in audit log
+    Worker->>Action: Fire Slack message to sales channel
+    Action-->>Worker: ok — success
+    Worker->>DB: Update audit log → success
+
+    Note over You,API: Observe what happened
+    You->>API: GET /logs?status=success
+    API->>DB: Query action_logs with cursor pagination
+    API-->>You: Paginated log list + next_cursor
+    You->>API: GET /stats
+    API-->>You: Total events, success rate, top rules
+
+    Note over Worker,Action: If it fails — retries 3x with increasing delays
+    Note over Worker,Action: Still fails → Dead Letter Queue → manual retry via POST /dlq/:id/retry
+    </div>
+  </div>
+</div>
+
+<!-- PHASES -->
+<div class="section" style="max-width:1100px;margin:0 auto 28px auto;">
+  <h2>The 6 Phases We Built</h2>
+</div>
+<div class="phases">
+  <div class="phase-card">
+    <span class="badge">Phase 1</span>
+    <h3>Foundation</h3>
+    <ul>
+      <li>Companies register and get an API key</li>
+      <li>Every request is authenticated</li>
+      <li>Events are accepted and stored safely</li>
+      <li>Health check endpoint</li>
+    </ul>
+  </div>
+  <div class="phase-card">
+    <span class="badge">Phase 2</span>
+    <h3>Queue &amp; Worker</h3>
+    <ul>
+      <li>Events drop into a job queue instantly</li>
+      <li>A background worker picks them up</li>
+      <li>Rules are stored and cached in Redis</li>
+      <li>Retries on failure — 3 attempts, exponential backoff</li>
+    </ul>
+  </div>
+  <div class="phase-card">
+    <span class="badge">Phase 3</span>
+    <h3>Rule Engine</h3>
+    <ul>
+      <li>Worker evaluates each rule condition</li>
+      <li>12 operators — equals, greater than, contains, regex…</li>
+      <li>Supports nested fields like order.address.city</li>
+      <li>Every match is logged as pending</li>
+    </ul>
+  </div>
+  <div class="phase-card">
+    <span class="badge">Phase 4</span>
+    <h3>Action Executors</h3>
+    <ul>
+      <li>Webhook fires an HTTP call to any URL</li>
+      <li>Email sends via SMTP with template variables</li>
+      <li>Slack posts a message to your channel</li>
+      <li>Every attempt logged — success or failed</li>
+    </ul>
+  </div>
+  <div class="phase-card">
+    <span class="badge">Phase 5</span>
+    <h3>Reliability</h3>
+    <ul>
+      <li>Rate limiter — per-tenant sliding window via Redis</li>
+      <li>Dead Letter Queue for exhausted jobs</li>
+      <li>Plan-based limits — free / pro / enterprise</li>
+      <li>Duplicate job guard — no double-processing</li>
+    </ul>
+  </div>
+  <div class="phase-card">
+    <span class="badge">Phase 6</span>
+    <h3>Observability &amp; Polish</h3>
+    <ul>
+      <li>GET /logs — paginated audit log with cursor</li>
+      <li>GET /stats — success rate, top rules, totals</li>
+      <li>Swagger UI at /docs — try every endpoint live</li>
+      <li>Docker, Fly.io deploy, Postman collection, README</li>
+    </ul>
+  </div>
+</div>
+
+<!-- API REFERENCE -->
+<div class="section">
+  <h2>API Endpoints at a Glance</h2>
+</div>
+<div class="api-grid">
+  <div class="api-group">
+    <h3>Auth &amp; Health</h3>
+    <div class="api-row"><span class="method get">GET</span><span class="api-path">/health</span></div>
+    <div class="api-row"><span class="method post">POST</span><span class="api-path">/auth/register</span></div>
+  </div>
+  <div class="api-group">
+    <h3>Events</h3>
+    <div class="api-row"><span class="method post">POST</span><span class="api-path">/events</span></div>
+  </div>
+  <div class="api-group">
+    <h3>Rules</h3>
+    <div class="api-row"><span class="method post">POST</span><span class="api-path">/rules</span></div>
+    <div class="api-row"><span class="method get">GET</span><span class="api-path">/rules</span></div>
+    <div class="api-row"><span class="method patch">PATCH</span><span class="api-path">/rules/:id</span></div>
+    <div class="api-row"><span class="method delete">DELETE</span><span class="api-path">/rules/:id</span></div>
+    <div class="api-row"><span class="method get">GET</span><span class="api-path">/rules/:id/logs</span></div>
+  </div>
+  <div class="api-group">
+    <h3>Observability</h3>
+    <div class="api-row"><span class="method get">GET</span><span class="api-path">/logs</span></div>
+    <div class="api-row"><span class="method get">GET</span><span class="api-path">/stats</span></div>
+    <div class="api-row"><span class="method get">GET</span><span class="api-path">/docs</span></div>
+  </div>
+  <div class="api-group">
+    <h3>Dead Letter Queue</h3>
+    <div class="api-row"><span class="method get">GET</span><span class="api-path">/dlq</span></div>
+    <div class="api-row"><span class="method post">POST</span><span class="api-path">/dlq/:id/retry</span></div>
+  </div>
+</div>
+
+<!-- RULE EXAMPLE -->
+<div class="rule-example">
+  <h2>What a Rule Looks Like</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Example</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Name</td><td>High value order alert</td></tr>
+      <tr><td>Trigger event</td><td><code>order.created</code></td></tr>
+      <tr><td>Condition</td><td><code>order.amount</code> is greater than <code>100</code></td></tr>
+      <tr><td>Action</td><td>Send a <strong>Slack</strong> message to <code>#sales-alerts</code></td></tr>
+      <tr><td>Audit</td><td>Every fire is logged — status, attempt count, response body</td></tr>
+      <tr><td>Retry</td><td>Fails? Retried 3× with backoff → Dead Letter Queue if exhausted</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  Triggrr — Phase 1–6 Architecture &nbsp;·&nbsp; Open in browser, then File → Print → Save as PDF to export
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#4f46e5',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#6366f1',
+      lineColor: '#6366f1',
+      secondaryColor: '#1e2130',
+      tertiaryColor: '#2d3148',
+      background: '#1e2130',
+      mainBkg: '#1e2130',
+      nodeBorder: '#4f46e5',
+      clusterBkg: '#1a1d2e',
+      titleColor: '#e2e8f0',
+      edgeLabelBackground: '#1e2130',
+      actorBkg: '#2d3148',
+      actorBorder: '#6366f1',
+      actorTextColor: '#e2e8f0',
+      actorLineColor: '#6366f1',
+      signalColor: '#a78bfa',
+      signalTextColor: '#e2e8f0',
+      labelBoxBkgColor: '#2d3148',
+      labelBoxBorderColor: '#4f46e5',
+      labelTextColor: '#e2e8f0',
+      loopTextColor: '#94a3b8',
+      noteBorderColor: '#6366f1',
+      noteBkgColor: '#2d3148',
+      noteTextColor: '#e2e8f0',
+    },
+    flowchart: { curve: 'basis', padding: 20 },
+    sequence: { actorMargin: 60, width: 150, height: 50, boxMargin: 10, useMaxWidth: true },
+  });
+</script>
+</body>
+</html>

@@ -1,18 +1,29 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
+	countActiveRulesByOrg,
 	createRule,
 	findRuleById,
-	listRulesByOrg,
+	listRulesWithLastTriggered,
 	softDeleteRule,
 	updateRule,
-	type Rule,
 } from './rules.model';
+import type { Rule } from './rules.model';
 import { invalidateRulesCache } from '../../cache/rules';
+import { PLAN_LIMITS } from '../../config/plans';
+import { getRuleLogs } from '../logs/logs.model';
+
+const VALID_OPERATORS = [
+	'eq', 'neq',
+	'gt', 'gte', 'lt', 'lte',
+	'in', 'contains',
+	'startsWith', 'endsWith',
+	'exists', 'regex',
+] as const;
 
 const conditionSchema = z.object({
 	field: z.string().min(1),
-	operator: z.string().min(1),
+	operator: z.enum(VALID_OPERATORS),
 	value: z.unknown(),
 });
 
@@ -89,13 +100,41 @@ export const createRuleHandler = async (request: FastifyRequest, reply: FastifyR
 		return sendValidationError(reply, configParsed.error);
 	}
 
+	const activeCount = await countActiveRulesByOrg(request.org.id);
+	const ruleLimit = PLAN_LIMITS[request.org.plan].maxRules;
+	if (activeCount >= ruleLimit) {
+		return reply.status(403).send({
+			message: `Rule limit reached for your plan (${ruleLimit} max). Upgrade to add more rules.`,
+		});
+	}
+
 	const rule = await createRule(request.org.id, parsed.data);
+
+	// Invalidate the cache for this org+event_type so the worker picks up the
+	// new rule immediately rather than waiting up to 60s for the TTL to expire.
+	await invalidateRulesCache(request.org.id, rule.event_type);
+
 	return reply.status(201).send(rule);
 };
 
 export const listRulesHandler = async (request: FastifyRequest, reply: FastifyReply) => {
-	const rules = await listRulesByOrg(request.org.id);
+	const rules = await listRulesWithLastTriggered(request.org.id);
 	return reply.status(200).send({ rules });
+};
+
+export const getRuleLogsHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+	const parsedParams = paramsSchema.safeParse(request.params);
+	if (!parsedParams.success) {
+		return sendValidationError(reply, parsedParams.error);
+	}
+
+	const rule = await findRuleById(request.org.id, parsedParams.data.id);
+	if (!rule) {
+		return reply.status(404).send({ message: 'Rule not found' });
+	}
+
+	const logs = await getRuleLogs(request.org.id, parsedParams.data.id, 50);
+	return reply.status(200).send({ logs });
 };
 
 export const patchRuleHandler = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -126,7 +165,13 @@ export const patchRuleHandler = async (request: FastifyRequest, reply: FastifyRe
 		return reply.status(404).send({ message: 'Rule not found' });
 	}
 
-	await invalidateRulesCache(request.org.id, updated.event_type);
+	// Invalidate using the old event_type so stale cache is cleared even if
+	// event_type changes in the future. updated.event_type covers the new value.
+	await invalidateRulesCache(request.org.id, existing.event_type);
+	if (updated.event_type !== existing.event_type) {
+		await invalidateRulesCache(request.org.id, updated.event_type);
+	}
+
 	return reply.status(200).send(updated);
 };
 

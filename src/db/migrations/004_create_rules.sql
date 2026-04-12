@@ -1,4 +1,4 @@
-CREATE TABLE rules (
+CREATE TABLE IF NOT EXISTS rules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -12,4 +12,4 @@ CREATE TABLE rules (
 );
 
 -- Partial index: only active rules, keeps it lean as rules scale
-CREATE INDEX idx_rules_org_event ON rules(org_id, event_type) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_rules_org_event ON rules(org_id, event_type) WHERE is_active = true;

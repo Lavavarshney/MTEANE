@@ -1,3 +1,4 @@
-// Rule engine entry-point.
-// Will be expanded in Phase 3 (rule evaluator + action executors).
-
+export { evaluate, isCondition } from './evaluator';
+export type { Condition } from './evaluator';
+export type { Executor, ExecutionResult } from './executors/types';
+export { getExecutor, UnknownActionTypeError } from './executors/registry';

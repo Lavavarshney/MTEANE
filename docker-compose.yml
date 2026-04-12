@@ -35,13 +35,14 @@ services:
     networks:
       - triggrr-network
 
-  app:
+  api:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: triggrr-app
+      dockerfile: Dockerfile.api
+    container_name: triggrr-api
+    env_file: .env
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 3000
       DATABASE_URL: postgresql://triggrr:triggrr@postgres:5432/triggrr
       REDIS_URL: redis://redis:6379
@@ -52,12 +53,32 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - .:/app
-      - /app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
     networks:
       - triggrr-network
-    command: npm run dev
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: triggrr-worker
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://triggrr:triggrr@postgres:5432/triggrr
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - triggrr-network
 
 volumes:
   triggrr-postgres-data:

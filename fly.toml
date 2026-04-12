@@ -1,50 +1,33 @@
-# fly.toml — Triggrr on Fly.io
-# Docs: https://fly.io/docs/reference/configuration/
-#
-# Deploy:  fly launch --no-deploy   (first time, creates app)
-#          fly secrets set DATABASE_URL="..." REDIS_URL="..."
-#          fly deploy
-
-app = "triggrr"
+app = "triggrr-api"
 primary_region = "iad"
 
 [build]
-  dockerfile = "Dockerfile"
-
-# Two processes share the same Docker image but run different commands.
-# Fly.io scales them independently.
-[processes]
-  app    = "node dist/index.js"
-  worker = "node dist/workers/index.js"
-
-[[services]]
-  protocol    = "tcp"
-  internal_port = 3000
-  processes   = ["app"]
-
-  [[services.ports]]
-    port     = 80
-    handlers = ["http"]
-
-  [[services.ports]]
-    port     = 443
-    handlers = ["tls", "http"]
-
-  [services.concurrency]
-    type       = "connections"
-    hard_limit = 25
-    soft_limit = 20
-
-  [[services.http_checks]]
-    interval      = "15s"
-    timeout       = "5s"
-    grace_period  = "10s"
-    method        = "GET"
-    path          = "/health"
+  dockerfile = "Dockerfile.api"
 
 [env]
   NODE_ENV = "production"
-  PORT     = "3000"
+  PORT = "3000"
 
-# Secrets (DATABASE_URL, REDIS_URL) are set via:
-#   fly secrets set DATABASE_URL="postgresql://..." REDIS_URL="rediss://..."
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+[[http_service.checks]]
+  grace_period = "15s"
+  interval = "30s"
+  method = "GET"
+  path = "/health"
+  protocol = "http"
+  timeout = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

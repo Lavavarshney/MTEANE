@@ -25,6 +25,15 @@ const envSchema = z.object({
       }
       return num;
     }),
+
+  // SMTP — optional; required only when using the email action executor
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string()
+    .optional()
+    .transform((str = '587') => Number.parseInt(str, 10)),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional().default('noreply@triggrr.io'),
 });
 
 const envResult = envSchema.safeParse(process.env);

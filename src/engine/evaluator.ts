@@ -1,3 +1,5 @@
+import { resolvePath } from '../utils/resolvePath';
+
 export interface Condition {
   field: string;
   operator: string;
@@ -5,25 +7,17 @@ export interface Condition {
 }
 
 /**
- * Resolve a dot-notation path in an object.
- * Example: resolvePath({ order: { amount: 100 } }, 'order.amount') => 100
+ * Narrows an unknown value to a Condition.
+ * Used in the worker to safely pass rule.condition (typed as Record<string, unknown>) to evaluate().
  */
-function resolvePath(obj: Record<string, unknown> | undefined, path: string): unknown {
-  if (obj === undefined || obj === null) {
-    return undefined;
-  }
-
-  return path.split('.').reduce((current, key) => {
-    if (current === null || current === undefined) {
-      return undefined;
-    }
-
-    if (typeof current === 'object' && key in current) {
-      return (current as Record<string, unknown>)[key];
-    }
-
-    return undefined;
-  }, obj as unknown);
+export function isCondition(obj: unknown): obj is Condition {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof (obj as Record<string, unknown>).field === 'string' &&
+    typeof (obj as Record<string, unknown>).operator === 'string' &&
+    'value' in (obj as object)
+  );
 }
 
 /**
@@ -100,7 +94,7 @@ export function evaluate(condition: Condition, payload: Record<string, unknown>)
       try {
         const regex = new RegExp(value);
         return regex.test(fieldValue);
-      } catch (err) {
+      } catch {
         throw new Error(`Invalid regex pattern: ${value}`);
       }
     }

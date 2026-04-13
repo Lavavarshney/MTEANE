@@ -113,7 +113,22 @@ npm run dev:worker
 ./scripts/demo.sh
 ```
 
-### 8. Run tests
+### 8. Producer demo UI (optional)
+
+A Next.js app that drives the same API from a browser — scenarios, rules, and logs. API key stays server-side.
+
+```bash
+cd examples/producer-app
+cp .env.example .env.local
+# Set TRIGGRR_URL to match the API (e.g. http://localhost:8080 if PORT=8080 in root .env)
+# and TRIGGRR_API_KEY (from npm run seed or POST /auth/register)
+npm install && npm run dev -- -p 3001
+# → http://localhost:3001
+```
+
+See [`examples/producer-app/README.md`](examples/producer-app/README.md) for Vercel deploy and scenario list.
+
+### 9. Run tests
 
 ```bash
 npm test
@@ -201,6 +216,9 @@ docs/
 
 scripts/
 └── demo.sh                         # End-to-end curl demo
+
+examples/
+└── producer-app/                   # Next.js demo UI (optional)
 ```
 
 ---

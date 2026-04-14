@@ -48,11 +48,11 @@ function StatCard({
 
 function HealthMiniCard({ health }: { health: HealthResponse | null }) {
   if (!health) return null;
-  const healthy = health.status === 'healthy';
+  const healthy = health.status === 'ok';
   const probes = [
-    { name: 'DB', ok: health.probes.db.status === 'ok' },
-    { name: 'Redis', ok: health.probes.redis.status === 'ok' },
-    { name: 'Memory', ok: health.probes.memory.status === 'ok' },
+    { name: 'DB', ok: health.db === 'ok' },
+    { name: 'Redis', ok: health.redis === 'ok' },
+    { name: 'Memory', ok: health.memory === 'ok' },
   ];
   return (
     <Card>

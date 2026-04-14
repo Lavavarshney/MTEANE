@@ -82,7 +82,7 @@ export interface LogsResponse {
 }
 
 export interface HealthProbe {
-  status: 'ok' | 'fail';
+  status: 'ok' | 'down' | 'high';
   latency_ms?: number;
   error?: string;
   usage_mb?: number;
@@ -90,12 +90,12 @@ export interface HealthProbe {
 }
 
 export interface HealthResponse {
-  status: 'healthy' | 'degraded';
-  probes: {
-    db: HealthProbe;
-    redis: HealthProbe;
-    memory: HealthProbe;
-  };
+  status: 'ok' | 'degraded';
+  db: 'ok' | 'down';
+  redis: 'ok' | 'down';
+  memory: 'ok' | 'high';
+  memory_mb: number;
+  uptime: number;
 }
 
 export interface RegisterResponse {

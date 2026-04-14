@@ -93,7 +93,7 @@ function HealthSection() {
               <Badge
                 variant="outline"
                 className={
-                  health.status === 'healthy'
+                  health.status === 'ok'
                     ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                     : 'bg-red-500/10 text-red-400 border-red-500/20'
                 }
@@ -125,29 +125,23 @@ function HealthSection() {
           <div>
             <ProbeRow
               name="database"
-              status={health.probes.db.status}
+              status={health.db === 'ok' ? 'ok' : 'fail'}
               detail={
-                health.probes.db.latency_ms !== undefined
-                  ? `${health.probes.db.latency_ms} ms`
-                  : health.probes.db.error
+                health.db === 'ok' ? undefined : 'down'
               }
             />
             <ProbeRow
               name="redis"
-              status={health.probes.redis.status}
+              status={health.redis === 'ok' ? 'ok' : 'fail'}
               detail={
-                health.probes.redis.latency_ms !== undefined
-                  ? `${health.probes.redis.latency_ms} ms`
-                  : health.probes.redis.error
+                health.redis === 'ok' ? undefined : 'down'
               }
             />
             <ProbeRow
               name="memory"
-              status={health.probes.memory.status}
+              status={health.memory === 'ok' ? 'ok' : 'fail'}
               detail={
-                health.probes.memory.usage_mb !== undefined
-                  ? `${health.probes.memory.usage_mb} MB / ${health.probes.memory.threshold_mb} MB`
-                  : health.probes.memory.error
+                `${health.memory_mb} MB`
               }
             />
           </div>

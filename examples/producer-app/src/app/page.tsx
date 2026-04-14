@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { triggrr, type OrgStats, type Rule } from '@/lib/triggrr';
+import { triggrr, type OrgStats, type Rule, type HealthResponse } from '@/lib/triggrr';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Zap, CheckCircle2, XCircle, TrendingUp, RefreshCw } from 'lucide-react';
+import { Zap, CheckCircle2, XCircle, TrendingUp, RefreshCw, Activity } from 'lucide-react';
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 
@@ -44,22 +44,60 @@ function StatCard({
   );
 }
 
+// ── Health mini-card ──────────────────────────────────────────────────────────
+
+function HealthMiniCard({ health }: { health: HealthResponse | null }) {
+  if (!health) return null;
+  const healthy = health.status === 'ok';
+  const probes = [
+    { name: 'DB', ok: health.db === 'ok' },
+    { name: 'Redis', ok: health.redis === 'ok' },
+    { name: 'Memory', ok: health.memory === 'ok' },
+  ];
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+        <CardTitle className="text-sm font-medium text-muted-foreground">API Health</CardTitle>
+        <Activity className={`w-4 h-4 ${healthy ? 'text-emerald-400' : 'text-red-400'}`} />
+      </CardHeader>
+      <CardContent>
+        <p className={`text-3xl font-bold ${healthy ? 'text-emerald-400' : 'text-red-400'}`}>
+          {healthy ? 'Healthy' : 'Degraded'}
+        </p>
+        <div className="flex gap-3 mt-2">
+          {probes.map(p => (
+            <div key={p.name} className="flex items-center gap-1 text-xs text-muted-foreground">
+              {p.ok
+                ? <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                : <XCircle className="w-3 h-3 text-red-400" />}
+              {p.name}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<OrgStats | null>(null);
   const [rules, setRules] = useState<Rule[]>([]);
+  const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [statsRes, rulesRes] = await Promise.all([
+      const [statsRes, rulesRes, healthRes] = await Promise.all([
         triggrr.stats.get(),
         triggrr.rules.list(),
+        triggrr.health.check().catch(() => null),
       ]);
       setStats(statsRes.stats);
       setRules(rulesRes.rules);
+      setHealth(healthRes);
       setLastUpdated(new Date());
     } catch {
       // silently skip on auto-refresh failures
@@ -103,7 +141,7 @@ export default function DashboardPage() {
       />
 
       {/* Stats cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
           title="Total Actions Fired"
           value={stats?.total ?? 0}
@@ -124,6 +162,7 @@ export default function DashboardPage() {
           icon={XCircle}
           accent="text-orange-400"
         />
+        <HealthMiniCard health={health} />
       </div>
 
       {/* Active rules + top triggered */}

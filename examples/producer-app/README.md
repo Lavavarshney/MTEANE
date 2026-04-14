@@ -98,7 +98,7 @@ Two ways:
 | DevOps | `service.down` | Slack alert when any service goes down |
 | Custom | anything | Write any `event_type` + JSON payload |
 
-> **Note:** The Slack/email rule configs use placeholder URLs. Update `action_config` in the Rules page or in `src/lib/scenarios.ts` before expecting real notifications.
+> **Note:** Demo rules use placeholder Slack/webhook URLs. On **Rules**, use **Create rule** (or **Edit** on a row) to set real HTTPS webhook or Slack incoming webhook URLs, or adjust `src/lib/scenarios.ts` before seeding.
 
 ---
 

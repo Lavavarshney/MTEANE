@@ -33,6 +33,13 @@ export interface CreateRuleInput {
   action_config: Record<string, unknown>;
 }
 
+export type RulePatchInput = {
+  name?: string;
+  condition?: Condition;
+  action_config?: Record<string, unknown>;
+  is_active?: boolean;
+};
+
 export interface ActionLog {
   id: string;
   event_id: string;
@@ -104,14 +111,20 @@ export const triggrr = {
     list(): Promise<{ rules: Rule[] }> {
       return req<{ rules: Rule[] }>('/api/rules');
     },
-    create(input: CreateRuleInput): Promise<{ rule: Rule }> {
-      return req<{ rule: Rule }>('/api/rules', {
+    create(input: CreateRuleInput): Promise<Rule> {
+      return req<Rule>('/api/rules', {
         method: 'POST',
         body: JSON.stringify(input),
       });
     },
-    toggle(id: string, is_active: boolean): Promise<{ rule: Rule }> {
-      return req<{ rule: Rule }>(`/api/rules/${id}`, {
+    update(id: string, patch: RulePatchInput): Promise<Rule> {
+      return req<Rule>(`/api/rules/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      });
+    },
+    toggle(id: string, is_active: boolean): Promise<Rule> {
+      return req<Rule>(`/api/rules/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({ is_active }),
       });

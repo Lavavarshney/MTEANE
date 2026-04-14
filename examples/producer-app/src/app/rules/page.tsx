@@ -5,6 +5,7 @@ import { triggrr, type Rule } from '@/lib/triggrr';
 import { DEMO_RULES } from '@/lib/scenarios';
 import { PageHeader } from '@/components/page-header';
 import { RuleRow } from '@/components/rule-row';
+import { RuleFormDialog } from '@/components/rule-form-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +22,9 @@ export default function RulesPage() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [editingRule, setEditingRule] = useState<Rule | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -32,6 +36,18 @@ export default function RulesPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  function openCreate() {
+    setFormMode('create');
+    setEditingRule(null);
+    setFormOpen(true);
+  }
+
+  function openEdit(rule: Rule) {
+    setFormMode('edit');
+    setEditingRule(rule);
+    setFormOpen(true);
+  }
 
   async function seedAll() {
     setSeeding(true);
@@ -56,17 +72,30 @@ export default function RulesPage() {
     <div>
       <PageHeader
         title="Rules"
-        description="Every active rule is evaluated against every incoming event. Toggle rules on/off without deleting them."
+        description="Create rules with webhooks, Slack, or email actions. Toggle rules on/off without deleting them."
         action={
-          <Button size="sm" onClick={seedAll} disabled={seeding} variant="outline">
-            {seeding ? (
-              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            ) : (
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-            )}
-            {seeding ? 'Seeding…' : 'Add example rules'}
-          </Button>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Button size="sm" onClick={openCreate}>
+              Create rule
+            </Button>
+            <Button size="sm" onClick={seedAll} disabled={seeding} variant="outline">
+              {seeding ? (
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
+              )}
+              {seeding ? 'Seeding…' : 'Add example rules'}
+            </Button>
+          </div>
         }
+      />
+
+      <RuleFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        mode={formMode}
+        rule={editingRule}
+        onSuccess={load}
       />
 
       <Card>
@@ -97,7 +126,7 @@ export default function RulesPage() {
               </TableHeader>
               <TableBody>
                 {rules.map(rule => (
-                  <RuleRow key={rule.id} rule={rule} onChanged={load} />
+                  <RuleRow key={rule.id} rule={rule} onChanged={load} onEdit={openEdit} />
                 ))}
               </TableBody>
             </Table>

@@ -6,7 +6,7 @@ import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Trash2, ToggleLeft, ToggleRight, Clock, CheckCircle2 } from 'lucide-react';
+import { Trash2, ToggleLeft, ToggleRight, Clock, CheckCircle2, Pencil } from 'lucide-react';
 
 const ACTION_COLORS: Record<string, string> = {
   webhook: 'bg-violet-500/15 text-violet-400 border-violet-500/20',
@@ -17,9 +17,10 @@ const ACTION_COLORS: Record<string, string> = {
 interface RuleRowProps {
   rule: Rule;
   onChanged: () => void;
+  onEdit: (rule: Rule) => void;
 }
 
-export function RuleRow({ rule, onChanged }: RuleRowProps) {
+export function RuleRow({ rule, onChanged, onEdit }: RuleRowProps) {
   const [toggling, setToggling] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -103,6 +104,15 @@ export function RuleRow({ rule, onChanged }: RuleRowProps) {
 
       <TableCell>
         <div className="flex items-center gap-1 justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(rule)}
+            className="h-7 px-2 text-muted-foreground hover:text-foreground"
+            title="Edit rule"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"

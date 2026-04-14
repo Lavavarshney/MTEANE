@@ -21,8 +21,10 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
+COPY start.sh ./start.sh
+RUN chmod +x start.sh
 
-EXPOSE 3000
+EXPOSE 8080
 
-# Default command — Fly.io overrides this per-process via fly.toml [processes]
-CMD ["node", "dist/index.js"]
+# Starts both the API (foreground, binds PORT) and the worker (background)
+CMD ["./start.sh"]

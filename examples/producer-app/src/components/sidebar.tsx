@@ -3,13 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Zap, LayoutDashboard, BookOpen, ListChecks, ScrollText } from 'lucide-react';
+import { Zap, LayoutDashboard, BookOpen, ListChecks, ScrollText, AlertTriangle, Settings, ExternalLink } from 'lucide-react';
 
 const NAV = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/scenarios', label: 'Scenarios', icon: BookOpen },
   { href: '/rules', label: 'Rules', icon: ListChecks },
   { href: '/logs', label: 'Logs', icon: ScrollText },
+  { href: '/dlq', label: 'Dead Letter Queue', icon: AlertTriangle },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function Sidebar() {
@@ -51,13 +53,22 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="mt-6 pt-4 border-t border-border px-2">
+      <div className="mt-6 pt-4 border-t border-border px-2 space-y-2">
         <p className="text-[11px] text-muted-foreground">
           API:{' '}
           <span className="font-mono text-foreground/70">
             {process.env.NEXT_PUBLIC_TRIGGRR_URL ?? 'localhost:3000'}
           </span>
         </p>
+        <a
+          href={`${process.env.NEXT_PUBLIC_TRIGGRR_URL ?? 'http://localhost:8080'}/docs`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ExternalLink className="w-3 h-3 shrink-0" />
+          Swagger API Docs
+        </a>
       </div>
     </aside>
   );

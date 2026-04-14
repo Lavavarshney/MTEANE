@@ -81,6 +81,44 @@ export interface LogsResponse {
   next_cursor: string | null;
 }
 
+export interface HealthProbe {
+  status: 'ok' | 'fail';
+  latency_ms?: number;
+  error?: string;
+  usage_mb?: number;
+  threshold_mb?: number;
+}
+
+export interface HealthResponse {
+  status: 'healthy' | 'degraded';
+  probes: {
+    db: HealthProbe;
+    redis: HealthProbe;
+    memory: HealthProbe;
+  };
+}
+
+export interface RegisterResponse {
+  org_id: string;
+  api_key: string;
+  warning: string;
+}
+
+export interface DlqJob {
+  id: string;
+  eventId: string;
+  orgId: string;
+  eventType: string;
+  failedReason: string;
+  finalAttempt: boolean;
+  timestamp: number;
+  processedOn: number | null;
+}
+
+export interface RuleLogsResponse {
+  logs: ActionLog[];
+}
+
 // ── HTTP helper ───────────────────────────────────────────────────────────────
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
@@ -98,6 +136,21 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 // ── Public API surface ────────────────────────────────────────────────────────
 
 export const triggrr = {
+  health: {
+    check(): Promise<HealthResponse> {
+      return req<HealthResponse>('/api/health');
+    },
+  },
+
+  auth: {
+    register(name: string, slug: string): Promise<RegisterResponse> {
+      return req<RegisterResponse>('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, slug }),
+      });
+    },
+  },
+
   events: {
     send(eventType: string, payload: Record<string, unknown>): Promise<EventResponse> {
       return req<EventResponse>('/api/events', {
@@ -132,6 +185,9 @@ export const triggrr = {
     delete(id: string): Promise<{ message: string }> {
       return req<{ message: string }>(`/api/rules/${id}`, { method: 'DELETE' });
     },
+    getLogs(id: string): Promise<RuleLogsResponse> {
+      return req<RuleLogsResponse>(`/api/rules/${id}/logs`);
+    },
   },
 
   logs: {
@@ -152,6 +208,17 @@ export const triggrr = {
   stats: {
     get(): Promise<{ stats: OrgStats }> {
       return req<{ stats: OrgStats }>('/api/stats');
+    },
+  },
+
+  dlq: {
+    list(): Promise<{ jobs: DlqJob[] }> {
+      return req<{ jobs: DlqJob[] }>('/api/dlq');
+    },
+    retry(jobId: string): Promise<{ message: string; eventId: string }> {
+      return req<{ message: string; eventId: string }>(`/api/dlq/${jobId}/retry`, {
+        method: 'POST',
+      });
     },
   },
 };

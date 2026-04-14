@@ -6,6 +6,7 @@ import { DEMO_RULES } from '@/lib/scenarios';
 import { PageHeader } from '@/components/page-header';
 import { RuleRow } from '@/components/rule-row';
 import { RuleFormDialog } from '@/components/rule-form-dialog';
+import { RuleLogsDialog } from '@/components/rule-logs-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +26,8 @@ export default function RulesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingRule, setEditingRule] = useState<Rule | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [logsRule, setLogsRule] = useState<Rule | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -47,6 +50,11 @@ export default function RulesPage() {
     setFormMode('edit');
     setEditingRule(rule);
     setFormOpen(true);
+  }
+
+  function openLogs(rule: Rule) {
+    setLogsRule(rule);
+    setLogsOpen(true);
   }
 
   async function seedAll() {
@@ -98,6 +106,12 @@ export default function RulesPage() {
         onSuccess={load}
       />
 
+      <RuleLogsDialog
+        open={logsOpen}
+        onOpenChange={setLogsOpen}
+        rule={logsRule}
+      />
+
       <Card>
         <CardContent className="p-0">
           {loading ? (
@@ -126,7 +140,7 @@ export default function RulesPage() {
               </TableHeader>
               <TableBody>
                 {rules.map(rule => (
-                  <RuleRow key={rule.id} rule={rule} onChanged={load} onEdit={openEdit} />
+                  <RuleRow key={rule.id} rule={rule} onChanged={load} onEdit={openEdit} onViewLogs={openLogs} />
                 ))}
               </TableBody>
             </Table>

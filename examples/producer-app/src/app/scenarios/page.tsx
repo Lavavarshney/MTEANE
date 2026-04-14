@@ -11,7 +11,7 @@ export default function ScenariosPage() {
     <div>
       <PageHeader
         title="Scenarios"
-        description="Pre-built event templates. Click 'Fire Event' to send the event to Triggrr — a matching rule must exist for an action to trigger. Use 'Seed Rule' to create one automatically."
+        description="Pre-built event templates. Fire an event to Triggrr — a matching rule must exist for an action to run. Use Seed Rule on a card to create the paired rule, Add example rules on Rules for all demos, or Create rule to set your own webhook, Slack, or email action."
       />
 
       <Tabs defaultValue="E-commerce">
